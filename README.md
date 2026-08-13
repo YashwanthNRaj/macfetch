@@ -16,7 +16,7 @@ Downloads use a first-in, first-out queue. The Mac app runs one job at a time so
 
 The separate `/ios` page is a standalone deployed flow, not a Mac remote. It sends jobs through the website's same-origin API proxy to the containerized service in `services/ios-api`. The service runs `yt-dlp` and FFmpeg, keeps completed files temporarily, and streams the selected file back to Safari so it can be saved in iPhone Files.
 
-Video downloads are always transcoded after fetching: 1080p and below use MP4 + H.264 High Profile + AAC-LC, while 1440p, 4K, and 8K use MP4 + HEVC Main 10 tagged as `hvc1` + AAC-LC. All MP4 files use `faststart`. The 8K output is standards-compatible HEVC, but actual 8K playback remains dependent on the iPhone model's decoder capability.
+Video downloads are merged into MP4 without a second transcoding pass. This is faster and avoids quality loss, but 4K and 8K playback depends on the source codec and the iPhone model; high-resolution files are not guaranteed to play on every iPhone.
 
 For a local iPhone preview:
 
@@ -33,7 +33,7 @@ For production:
 
 The production service supports public videos. Firefox-cookie access is intentionally limited to the local Mac app; a cloud service cannot safely read an individual user's local browser session. Temporary files expire after one hour by default. Rate limits, queue limits, maximum file size, and cleanup behavior are configurable with the variables documented in `services/ios-api/.env.example`.
 
-The iPhone service also defaults to one active job at a time—important for expensive HEVC and 8K conversion—and exposes only each visitor's own queue through the same-origin proxy.
+The iPhone service defaults to one active job at a time and exposes only each visitor's own queue through the same-origin proxy.
 
 ## Requirements
 

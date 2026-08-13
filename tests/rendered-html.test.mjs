@@ -42,8 +42,8 @@ test("server-renders the iPhone companion page", async () => {
   assert.match(html, /Download phone pe\./);
   assert.match(html, /Apna format choose kar/);
   assert.match(html, /iPhone mein kahan\?/);
-  assert.match(html, /iPhone-ready MP4/);
-  assert.match(html, /H\.264 \+ AAC/);
-  assert.match(html, /HEVC/);
+  assert.match(html, /Original quality, no conversion/);
+  assert.match(html, /original codec/);
+  assert.doesNotMatch(html, /iPhone-ready MP4|H\.264 \+ AAC|HEVC/);
   assert.match(html, /href="\/"/);
 });

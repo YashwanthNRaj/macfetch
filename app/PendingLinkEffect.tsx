@@ -1,10 +1,9 @@
-type PendingStatus = "queued" | "downloading" | "processing" | "converting";
+type PendingStatus = "queued" | "downloading" | "processing";
 
 const labels: Record<PendingStatus, string> = {
   queued: "Queue mein wait",
   downloading: "Download aa raha hai",
   processing: "Streams merge ho rahe",
-  converting: "iPhone format ban raha",
 };
 
 export default function PendingLinkEffect({ status, progress }: { status: PendingStatus; progress: number }) {

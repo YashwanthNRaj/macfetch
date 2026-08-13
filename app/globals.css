@@ -400,7 +400,7 @@ main::after { display: none; }
 .queue-animation > i:nth-of-type(2) { animation-delay: -.42s; }
 .queue-animation > i:nth-of-type(3) { animation-delay: -.84s; }
 .queue-item.queued .queue-file { left: 7px; background: #789b80; animation: queueWaiting 1.7s ease-in-out infinite; }
-.queue-item.downloading .queue-file, .queue-item.processing .queue-file, .queue-item.converting .queue-file { animation: queueFileFloat 1.25s ease-in-out infinite; }
+.queue-item.downloading .queue-file, .queue-item.processing .queue-file { animation: queueFileFloat 1.25s ease-in-out infinite; }
 .queue-item.done .queue-file { left: 38px; background: #789b80; }
 .queue-item.done .queue-animation > i, .queue-item.error .queue-animation > i { animation: none; opacity: 0; }
 .queue-item.error .queue-file { background: #777d7b; }
@@ -593,10 +593,6 @@ footer span { display: flex; align-items: center; gap: 6px; font-weight: 800; }
 .ios-quality-grid button svg { top: 8px; right: 8px; position: absolute; color: #858b89; }
 .ios-quality-grid button.selected { border-color: rgba(132,138,136,.54); background: #202324; box-shadow: 0 7px 18px rgba(132,138,136,.08); }
 .ios-quality-grid button:disabled { opacity: .28; }
-.ios-codec-plan { margin-top: 10px; padding: 11px 12px; display: flex; align-items: center; gap: 9px; border: 1px solid rgba(82,115,91,.12); border-radius: 13px; color: #526f5a; background: #edf3ea; }
-.ios-codec-plan > svg { flex: none; }
-.ios-codec-plan span { display: grid; gap: 2px; color: #6f7e77; font-size: 8px; }
-.ios-codec-plan strong { color: #35533d; font-size: 9px; }
 .ios-audio-grid { margin-top: 15px; display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
 .ios-audio-grid button { min-height: 70px; padding: 11px; display: grid; grid-template-columns: 24px 1fr; align-items: center; text-align: left; border: 1px solid rgba(23,41,44,.1); border-radius: 14px; background: rgba(255,255,255,.7); }
 .ios-audio-grid button svg { grid-row: 1 / 3; color: #526c69; }
@@ -636,7 +632,7 @@ footer span { display: flex; align-items: center; gap: 6px; font-weight: 800; }
 .ios-queue-animation > i:nth-of-type(2) { animation-delay: -.4s; }
 .ios-queue-animation > i:nth-of-type(3) { animation-delay: -.8s; }
 .ios-queue-item.queued .ios-queue-animation > span { left: 6px; background: #789b80; animation: queueWaiting 1.7s ease-in-out infinite; }
-.ios-queue-item.downloading .ios-queue-animation > span, .ios-queue-item.processing .ios-queue-animation > span, .ios-queue-item.converting .ios-queue-animation > span { animation: queueFileFloat 1.25s ease-in-out infinite; }
+.ios-queue-item.downloading .ios-queue-animation > span, .ios-queue-item.processing .ios-queue-animation > span { animation: queueFileFloat 1.25s ease-in-out infinite; }
 .ios-queue-item.done .ios-queue-animation > span { left: 26px; background: #789b80; }
 .ios-queue-item.done .ios-queue-animation > i, .ios-queue-item.error .ios-queue-animation > i { display: none; }
 .ios-queue-item.error .ios-queue-animation > span { background: #777d7b; }
@@ -824,9 +820,6 @@ footer { border-color: rgba(255,255,255,.075); color: #686f6c; }
 .ios-quality-grid button small, .ios-audio-grid button small { color: #747b78; }
 .ios-quality-grid button svg { color: #777d7b; }
 .ios-quality-grid button.selected, .ios-audio-grid button.selected { border-color: rgba(114,120,118,.58); color: #f2eee6; background: #202324; box-shadow: inset 0 -2px 0 #737977, 0 8px 20px rgba(0,0,0,.3); }
-.ios-codec-plan { border-color: rgba(255,255,255,.07); color: #c8c7c1; background: #242728; }
-.ios-codec-plan span { color: #898f8c; }
-.ios-codec-plan strong { color: #dbd8d0; }
 .ios-audio-grid button svg { color: #aeb2ae; }
 .ios-destination > div:last-child { background: #111314; }
 .ios-destination > div:last-child > svg { color: #d5d3cc; }
@@ -1160,7 +1153,6 @@ main > .ambient-effects { display: none; }
 .ios-card-heading p,
 .ios-quality-grid button small,
 .ios-audio-grid button small,
-.ios-codec-plan,
 .ios-destination small,
 .ios-queue-copy small { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
 .ios-url-input { height: 47px; border-color: #313030; border-radius: 2px; background: var(--stitch-black); font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
@@ -1175,7 +1167,6 @@ main > .ambient-effects { display: none; }
 .ios-audio-grid button { min-height: 66px; border-color: var(--stitch-outline); border-radius: 3px; background: var(--stitch-lowest); }
 .ios-quality-grid button.selected,
 .ios-audio-grid button.selected { border-color: #787776; background: var(--stitch-high); box-shadow: inset 0 -2px 0 #929090; }
-.ios-codec-plan,
 .ios-destination > div:last-child { border-radius: 3px; background: var(--stitch-lowest); }
 .ios-queue-item { border-color: var(--stitch-outline); }
 .ios-queue-animation,
@@ -1256,8 +1247,7 @@ main > .ambient-effects { display: none; }
 .pending-link-copy > span i { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg,#5f5e5e,#f3f0ef); box-shadow: 0 0 10px rgba(255,255,255,.24); transition: width .5s ease; }
 .pending-link-effect > b { min-width: 31px; color: #c9c6c5; font-family: ui-monospace,"SFMono-Regular",Menlo,monospace; font-size: 8px; text-align: right; font-variant-numeric: tabular-nums; }
 .pending-link-effect.is-queued .pending-link-model { animation: pendingLinkWait 1.3s ease-in-out infinite; }
-.pending-link-effect.is-processing .pending-link-model,
-.pending-link-effect.is-converting .pending-link-model { animation-duration: 2.4s; }
+.pending-link-effect.is-processing .pending-link-model { animation-duration: 2.4s; }
 .ios-page .pending-link-effect { width: min(360px,calc(100% - 24px)); right: auto; left: 50%; bottom: calc(148px + env(safe-area-inset-bottom)); transform: translateX(-50%); animation-name: pendingHudInMobile; }
 
 @keyframes pendingLinkSpin { from { transform: rotateX(12deg) rotateY(0deg); } to { transform: rotateX(12deg) rotateY(360deg); } }

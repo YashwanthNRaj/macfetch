@@ -44,7 +44,7 @@ type VideoInfo = {
 
 type Job = {
   id: string;
-  status: "queued" | "downloading" | "processing" | "converting" | "done" | "error";
+  status: "queued" | "downloading" | "processing" | "done" | "error";
   progress: number;
   speed?: string;
   eta?: string;
@@ -86,7 +86,6 @@ function jobDetails(job: Job) {
   if (job.status === "queued") return `Queue #${job.queuePosition || 1} · ${storage}`;
   if (job.status === "downloading") return [job.speed || "Speed aa rahi", storage, job.eta ? `${job.eta} baaki` : ""].filter(Boolean).join(" · ");
   if (job.status === "processing") return `${storage} · Streams merge ho rahe`;
-  if (job.status === "converting") return `${storage} · ${job.codec || "iPhone format"} ban raha`;
   if (job.status === "done") return `${formatBytes(job.size || job.totalBytes)} · Save dabao aur Files mein rakho`;
   return job.error || "Download ruk gaya";
 }
@@ -245,8 +244,8 @@ export default function IOSCompanion() {
     downloadVideo();
   }
 
-  const activeJobs = jobs.filter((item) => ["queued", "downloading", "processing", "converting"].includes(item.status));
-  const primaryJob = jobs.find((item) => ["downloading", "processing", "converting"].includes(item.status))
+  const activeJobs = jobs.filter((item) => ["queued", "downloading", "processing"].includes(item.status));
+  const primaryJob = jobs.find((item) => ["downloading", "processing"].includes(item.status))
     || jobs.find((item) => item.status === "queued")
     || null;
   const actionLabel = activeJobs.length
@@ -335,10 +334,9 @@ export default function IOSCompanion() {
               <div className="ios-quality-grid">
                 {qualities.map((item) => {
                   const unavailable = Boolean(info && !availableQualities.some((available) => available.value === item.value));
-                  return <button key={item.value} disabled={unavailable} className={quality === item.value ? "selected" : ""} onClick={() => setQuality(item.value)}><strong>{item.label}</strong><small>{item.value >= 1440 ? "HEVC" : item.value >= 720 ? "Crisp" : "Basic"}</small>{quality === item.value && <Check size={13} />}</button>;
+                  return <button key={item.value} disabled={unavailable} className={quality === item.value ? "selected" : ""} onClick={() => setQuality(item.value)}><strong>{item.label}</strong><small>{item.value >= 1440 ? "High-res" : item.value >= 720 ? "Crisp" : "Basic"}</small>{quality === item.value && <Check size={13} />}</button>;
                 })}
               </div>
-              <div className="ios-codec-plan"><Check size={14} /><span><strong>iPhone-ready MP4</strong>{quality <= 1080 ? "H.264 + AAC" : "HEVC (hvc1) + AAC"}{quality === 4320 ? " · 8K playback model-dependent" : ""}</span></div>
             </>
           ) : (
             <div className="ios-audio-grid">
@@ -386,7 +384,7 @@ export default function IOSCompanion() {
         )}
 
         <section className="ios-companion-note">
-          <Smartphone size={19} /><div><strong>Standalone iPhone flow</strong><p>Har video download ke baad iPhone-compatible MP4 mein convert hota hai. 8K HEVC file banegi, lekin smooth 8K playback iPhone model aur hardware decoder par depend karta hai.</p></div>
+          <Smartphone size={19} /><div><strong>Original quality, no conversion</strong><p>Video merge hoke original codec mein save hota hai. 4K aur 8K playback iPhone model aur source codec par depend karega.</p></div>
         </section>
       </div>
 

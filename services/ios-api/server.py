@@ -136,101 +136,6 @@ def useful_error(lines: list[str]) -> str:
     return raw.removeprefix("ERROR: ")[:360]
 
 
-def media_duration(path: Path) -> float:
-    ffprobe = tool("ffprobe")
-    if not ffprobe:
-        return 0
-    result = subprocess.run(
-        [ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    try:
-        return float(result.stdout.strip()) if result.returncode == 0 else 0
-    except ValueError:
-        return 0
-
-
-def iphone_video_codec(quality: int) -> tuple[str, list[str]]:
-    if quality <= 1080:
-        return "H.264 + AAC", [
-            "-c:v", "libx264",
-            "-preset", "medium",
-            "-crf", "20",
-            "-profile:v", "high",
-            "-level:v", "4.2",
-            "-pix_fmt", "yuv420p",
-        ]
-    return "HEVC (hvc1) + AAC", [
-        "-c:v", "libx265",
-        "-preset", "fast",
-        "-crf", "23",
-        "-profile:v", "main10",
-        "-pix_fmt", "yuv420p10le",
-        "-tag:v", "hvc1",
-    ]
-
-
-def convert_for_iphone(job_id: str, source: Path, quality: int) -> Path | None:
-    ffmpeg = tool("ffmpeg")
-    if not ffmpeg:
-        update_job(job_id, status="error", error="FFmpeg ready nahi hai.", updatedAt=time.time())
-        return None
-
-    codec_label, video_args = iphone_video_codec(quality)
-    output = source.with_name(f"{source.stem} - iPhone.mp4")
-    duration = media_duration(source)
-    command = [
-        ffmpeg,
-        "-y",
-        "-i", str(source),
-        "-map", "0:v:0",
-        "-map", "0:a:0?",
-        "-map_metadata", "0",
-        "-sn",
-        *video_args,
-        "-c:a", "aac",
-        "-profile:a", "aac_low",
-        "-b:a", "192k",
-        "-ar", "48000",
-        "-ac", "2",
-        "-movflags", "+faststart",
-        "-progress", "pipe:1",
-        "-nostats",
-        str(output),
-    ]
-    update_job(job_id, status="converting", phase="iPhone compatibility", codec=codec_label, progress=74.0, speed="", eta="", updatedAt=time.time())
-    lines: list[str] = []
-    try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-        set_active_process(job_id, process)
-        assert process.stdout is not None
-        for raw_line in process.stdout:
-            line = raw_line.strip()
-            if not line:
-                continue
-            lines = [*lines[-14:], line]
-            if line.startswith("out_time_us=") and duration > 0:
-                try:
-                    converted_seconds = int(line.split("=", 1)[1]) / 1_000_000
-                    progress = min(74.0 + (converted_seconds / duration) * 25.0, 99.0)
-                    update_job(job_id, status="converting", progress=progress, updatedAt=time.time())
-                except ValueError:
-                    pass
-        if process.wait() != 0 or not output.is_file():
-            set_active_process(job_id, None)
-            update_job(job_id, status="error", error=f"iPhone conversion fail hua: {useful_error(lines)}", updatedAt=time.time())
-            return None
-        set_active_process(job_id, None)
-        source.unlink(missing_ok=True)
-        return output
-    except Exception as exc:
-        set_active_process(job_id, None)
-        update_job(job_id, status="error", error=f"iPhone conversion fail hua: {str(exc)[:300]}", updatedAt=time.time())
-        return None
-
-
 def run_download(job_id: str, payload: dict) -> None:
     yt_dlp = tool("yt-dlp")
     ffmpeg = tool("ffmpeg")
@@ -283,7 +188,7 @@ def run_download(job_id: str, payload: dict) -> None:
                 parts = line.removeprefix("download:").split("|")
                 match = re.search(r"([0-9.]+)%", parts[0])
                 raw_progress = min(float(match.group(1)) if match else 0, 100.0)
-                progress = raw_progress if mode == "audio" else raw_progress * 0.72
+                progress = raw_progress
                 update_job(
                     job_id,
                     status="downloading",
@@ -295,7 +200,7 @@ def run_download(job_id: str, payload: dict) -> None:
                     updatedAt=time.time(),
                 )
             elif line == "PROCESSING" or "Merging formats" in line or "Post-process" in line:
-                update_job(job_id, status="processing", progress=99.0 if mode == "audio" else 73.0, speed="", eta="", updatedAt=time.time())
+                update_job(job_id, status="processing", progress=99.0, speed="", eta="", updatedAt=time.time())
 
         if process.wait() != 0:
             set_active_process(job_id, None)
@@ -308,12 +213,7 @@ def run_download(job_id: str, payload: dict) -> None:
             update_job(job_id, status="error", error="File create nahi ho paayi.", updatedAt=time.time())
             return
         output = max(files, key=lambda path: path.stat().st_size)
-        codec = audio_format.upper() if mode == "audio" else iphone_video_codec(quality)[0]
-        if mode == "video":
-            converted = convert_for_iphone(job_id, output, quality)
-            if not converted:
-                return
-            output = converted
+        codec = audio_format.upper() if mode == "audio" else "Source codec"
         update_job(
             job_id,
             status="done",
@@ -471,7 +371,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json(429, {"error": "Hourly download limit hit ho gaya. Baad mein try karo."})
                     return
                 with JOBS_LOCK:
-                    active = sum(1 for job in JOBS.values() if job.get("status") in {"queued", "downloading", "processing", "converting"})
+                    active = sum(1 for job in JOBS.values() if job.get("status") in {"queued", "downloading", "processing"})
                 if active >= MAX_QUEUE:
                     self.send_json(503, {"error": "Server abhi full hai. Thodi der mein try karo."})
                     return

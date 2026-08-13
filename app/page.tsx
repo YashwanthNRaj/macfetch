@@ -263,7 +263,7 @@ export default function Home() {
       return;
     }
     if (!serviceReady) {
-      setMessage("Mac service offline hai. Pehle start.command kholo.");
+      setMessage("");
       return;
     }
     setLoading(true);
@@ -283,7 +283,7 @@ export default function Home() {
     } catch (error) {
       if (error instanceof TypeError) {
         setServiceReady(false);
-        setMessage("Local service band ho gayi. start.command double-click karo aur Terminal khula rakho.");
+        setMessage("");
       } else {
         setMessage(error instanceof Error ? error.message : "Video check nahi ho paaya.");
       }
@@ -310,7 +310,7 @@ export default function Home() {
     } catch (error) {
       if (error instanceof TypeError) {
         setServiceReady(false);
-        setMessage("Local service band ho gayi. start.command double-click karo aur Terminal khula rakho.");
+        setMessage("");
       } else {
         setMessage(error instanceof Error ? error.message : "Download start nahi ho paaya.");
       }
@@ -340,9 +340,12 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Output folder badal nahi paaya.");
       if (!data.cancelled && data.outputDir) setOutputDir(data.outputDir);
     } catch (error) {
-      setMessage(error instanceof TypeError
-        ? "Local service band ho gayi. MacFetch restart karke phir try karo."
-        : error instanceof Error ? error.message : "Output folder badal nahi paaya.");
+      if (error instanceof TypeError) {
+        setServiceReady(false);
+        setMessage("");
+      } else {
+        setMessage(error instanceof Error ? error.message : "Output folder badal nahi paaya.");
+      }
     }
   }
 
@@ -489,9 +492,9 @@ export default function Home() {
               aria-label="YouTube URL"
             />
             <button className="paste-button" onClick={pasteUrl}><Clipboard size={17} /> <span>Chipka de</span></button>
-            <button className="analyze-button" onClick={analyze} disabled={loading}>
+            <button className="analyze-button" onClick={analyze} disabled={loading || serviceReady === false} title={serviceReady === false ? "MacFetch start.command kholo" : undefined}>
               {loading ? <LoaderCircle className="spin" size={18} /> : <Sparkles size={17} />}
-              {loading ? "Dekh raha…" : "Check kar"}
+              {loading ? "Dekh raha…" : serviceReady === false ? "MacFetch start karo" : "Check kar"}
             </button>
           </div>
           <div className="privacy-line"><LockKeyhole size={13} /> Sab local. Cloud ka koi scene nahi. <span /> Browsing data Mac pe hi rahega</div>
@@ -600,7 +603,7 @@ export default function Home() {
             </div>
           </section>
 
-          <button className={`download-button ${info ? "is-ready" : ""} ${activeJobs.length ? "queue-active" : "idle"}`} onClick={startDownload} disabled={loading} onPointerMove={magnetize} onPointerLeave={resetMagnet}>
+          <button className={`download-button ${info ? "is-ready" : ""} ${activeJobs.length ? "queue-active" : "idle"}`} onClick={startDownload} disabled={loading || serviceReady === false} onPointerMove={magnetize} onPointerLeave={resetMagnet}>
             <span className={`download-icon ${activeJobs.length ? "is-working" : ""}`}><Download size={21} /></span>
             <span className="download-copy"><strong>{activeJobs.length ? `Queue mein daal · ${activeJobs.length} active` : `Le aa ${mode === "video" ? `${qualities.find((q) => q.value === quality)?.label} MP4` : audioFormat.toUpperCase()}`}</strong><small>{info ? `${info.channel} · ${activeJobs.length ? "Apni turn pe khud start hoga" : "Mac pe hi save hoga"}` : "Pehle link check karke formats unlock kar"}</small></span>
             <ArrowRight className="download-arrow" size={19} />
