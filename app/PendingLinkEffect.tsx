@@ -13,9 +13,10 @@ export default function PendingLinkEffect({ status, progress }: { status: Pendin
     <div className={`pending-link-effect is-${status}`} role="status" aria-live="polite">
       <div className="pending-link-scene" aria-hidden="true">
         <div className="pending-link-model">
-          <span className="pending-link-ring ring-one" />
-          <span className="pending-link-ring ring-two" />
-          <i />
+          <div className="gyro-outer" />
+          <div className="gyro-inner" />
+          <div className="gyro-core" />
+          <div className="gyro-pulse" />
         </div>
       </div>
       <span className="pending-link-copy">

@@ -1,62 +1,97 @@
-# MacFetch
+# ⚡ MacFetch — Cloud & Local YouTube Media Platform
 
-A private, local YouTube video and audio downloader for macOS. MacFetch wraps `yt-dlp` in a clean browser interface and can use the signed-in Firefox profile on the Mac when a video requires authentication.
+> A modern, high-performance YouTube video & audio downloader platform built with **Next.js (RSC)**, **Vite**, **Python**, `yt-dlp`, and **FFmpeg**. Features a **SaveFrom.net-style Cloud Web App** (for Vercel deployment) and a **Local macOS App** mode.
 
-## Start on macOS
+---
+
+## 🌟 Key Features
+
+- **🌐 SaveFrom.net Cloud Mode**: Deploy to **Vercel** with direct browser downloads (`.mp4` / `.mp3`) for visitors globally across Desktop, iPhone, and Android.
+- **🖥️ Local macOS Engine**: Runs seamlessly on your Mac with 1-click startup (`start.command`), streaming directly into `~/Downloads/MacFetch`.
+- **🚀 8K / 4K / High-FPS Support**: Extracts maximum quality streams (up to 4320p) with loss-free single-pass FFmpeg merging.
+- **🎧 Audio Extraction**: One-tap extraction into `MP3`, `M4A`, `FLAC`, and `WAV` formats with ID3 metadata preservation.
+- **⚡ Live 3D Transfer HUD**: Real-time progress monitoring with smooth 3D Gyro HUD visuals, transfer speed, and ETA calculation.
+- **📱 Responsive iOS Companion**: Standalone mobile PWA view (`/ios`) tailored for Safari & Add to Home Screen.
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+                          ┌──────────────────────────┐
+                          │   Vercel / Next.js UI    │
+                          │   (https://macfetch.app) │
+                          └─────────────┬────────────┘
+                                        │
+                                  HTTP / REST API
+                                        │
+                 ┌──────────────────────┴──────────────────────┐
+                 ▼                                             ▼
+  ┌─────────────────────────────┐               ┌─────────────────────────────┐
+  │   Cloud API Backend Engine  │               │   Local Mac Server Engine   │
+  │  (Render / Docker / Fly.io) │               │   (http://127.0.0.1:8432)   │
+  └──────────────┬──────────────┘               └──────────────┬──────────────┘
+                 │                                             │
+          `yt-dlp` Stream                                `yt-dlp` Local
+                 │                                             │
+                 ▼                                             ▼
+  ┌─────────────────────────────┐               ┌─────────────────────────────┐
+  │   Browser Direct Download   │               │   Mac Finder Folder         │
+  │   (iPhone / PC / Android)   │               │   (~/Downloads/MacFetch)    │
+  └─────────────────────────────┘               └─────────────────────────────┘
+```
+
+---
+
+## 🚀 Deployment Guide (SaveFrom.net Cloud Mode)
+
+### 1. Deploy Cloud Downloader Engine (Render / Fly.io / Docker)
+
+Deploy the containerized Python API server (`macfetch_server.py`) using the included `Dockerfile` and `render.yaml`:
+
+- **Render**: Connect your GitHub repository to Render — it will automatically detect `render.yaml` and provision a Web Service on port `8432`.
+- **Fly.io / Railway**: Run `fly launch` or import the repository to Railway using the `Dockerfile`.
+
+*Copy your deployed API URL (e.g. `https://macfetch-api.onrender.com`).*
+
+### 2. Deploy Frontend to Vercel
+
+1. Push your code to GitHub.
+2. Import the project in [Vercel](https://vercel.com).
+3. Add the environment variable:
+   ```env
+   NEXT_PUBLIC_API_URL=https://macfetch-api.onrender.com/api
+   ```
+4. Deploy! Your SaveFrom-style web app is live at `https://your-project.vercel.app`.
+
+---
+
+## 💻 Local macOS Setup
+
+### One-Click Start
 
 1. Double-click `start.command` in Finder.
-2. macOS may ask for permission the first time. Choose **Open**.
-3. Paste a YouTube link, choose video or audio and a quality, then download.
+2. Open <http://localhost:3000> in your browser.
+3. Paste any YouTube URL, select format/quality, and click **Check kar** -> **Download start kar**.
 
-Downloads default to `~/Downloads/MacFetch`. Use **Change** beside the output folder to choose another location with the native macOS folder picker; MacFetch remembers the selection.
+### Requirements
 
-Downloads use a first-in, first-out queue. The Mac app runs one job at a time so high-resolution merges do not overload the machine, while the interface keeps showing queue position, speed, ETA, processing state, and completed items.
+- **macOS 12+**
+- **Node.js 22+**
+- **Python 3+**
+- **yt-dlp** & **FFmpeg** (installed automatically via Homebrew if missing)
 
-## iPhone app
+---
 
-The separate `/ios` page is a standalone deployed flow, not a Mac remote. It sends jobs through the website's same-origin API proxy to the containerized service in `services/ios-api`. The service runs `yt-dlp` and FFmpeg, keeps completed files temporarily, and streams the selected file back to Safari so it can be saved in iPhone Files.
+## 🛠️ Tech Stack
 
-Video downloads are merged into MP4 without a second transcoding pass. This is faster and avoids quality loss, but 4K and 8K playback depends on the source codec and the iPhone model; high-resolution files are not guaranteed to play on every iPhone.
+- **Frontend**: Next.js 15 / Vinext, React 19, Lucide Icons, Vanilla CSS Design System
+- **Backend Service**: Python 3, `yt-dlp`, FFmpeg
+- **Database**: Drizzle ORM / SQLite
+- **Deployment**: Vercel (Frontend), Docker / Render (Backend)
 
-For a local iPhone preview:
+---
 
-1. Connect the Mac and iPhone to the same Wi-Fi network.
-2. Double-click `start.command` and keep its Terminal window open.
-3. Open the printed `iPhone preview` URL in Safari.
+## 📄 Disclaimer
 
-For production:
-
-1. Deploy `services/ios-api/Dockerfile` to a container host.
-2. Set a long random `MACFETCH_SERVICE_TOKEN` in the container.
-3. Configure the frontend runtime with `IOS_API_ORIGIN` set to the HTTPS container origin and `IOS_SERVICE_TOKEN` set to the same secret.
-4. Deploy the website and open `/ios` on the public HTTPS URL.
-
-The production service supports public videos. Firefox-cookie access is intentionally limited to the local Mac app; a cloud service cannot safely read an individual user's local browser session. Temporary files expire after one hour by default. Rate limits, queue limits, maximum file size, and cleanup behavior are configurable with the variables documented in `services/ios-api/.env.example`.
-
-The iPhone service defaults to one active job at a time and exposes only each visitor's own queue through the same-origin proxy.
-
-## Requirements
-
-- macOS 12 or newer
-- Node.js 22 or newer
-- Python 3
-- Homebrew (the launcher uses it to install `yt-dlp` and `ffmpeg` if missing)
-- Firefox, only if Firefox-cookie access is selected
-
-## Manual development
-
-Run the local service:
-
-```sh
-python3 macfetch_server.py
-```
-
-In another terminal, run the interface:
-
-```sh
-npm run dev
-```
-
-Open <http://localhost:3000>.
-
-Only download media you own or have permission to save. YouTube availability and access restrictions still apply.
+This project is intended strictly for personal archiving of copyright-free or self-owned content. Please comply with YouTube's Terms of Service and local copyright laws.

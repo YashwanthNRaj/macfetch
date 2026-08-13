@@ -1224,34 +1224,58 @@ main > .ambient-effects { display: none; }
   animation: pendingHudIn .42s cubic-bezier(.2,1,.35,1) both;
 }
 .pending-link-effect::before { content: ""; width: 130px; height: 90px; position: absolute; left: -28px; top: -20px; border-radius: 50%; background: rgba(255,255,255,.055); filter: blur(24px); }
-.pending-link-scene { width: 76px; height: 62px; display: grid; place-items: center; position: relative; perspective: 320px; }
-.pending-link-model { width: 68px; height: 40px; position: relative; transform-style: preserve-3d; animation: pendingLinkSpin 4.2s linear infinite; }
-.pending-link-ring {
-  width: 43px;
-  height: 25px;
+.pending-link-scene { width: 76px; height: 62px; display: grid; place-items: center; position: relative; perspective: 400px; }
+.pending-link-model { width: 46px; height: 46px; position: relative; transform-style: preserve-3d; animation: gyroRotate 7s linear infinite; }
+.gyro-outer {
   position: absolute;
-  top: 7px;
-  border: 5px solid transparent;
+  inset: 0;
   border-radius: 50%;
-  background: linear-gradient(#141616,#141616) padding-box, linear-gradient(145deg,#ffffff 4%,#8e9192 42%,#343535 68%,#f3f0ef 100%) border-box;
-  box-shadow: inset 2px 2px 4px rgba(255,255,255,.18), inset -3px -3px 5px rgba(0,0,0,.72), 0 5px 10px rgba(0,0,0,.42);
+  border: 3px solid transparent;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(100,100,100,0.3), rgba(240,240,240,0.85)) border-box;
+  box-shadow: 0 0 12px rgba(255,255,255,0.2), inset 0 0 6px rgba(255,255,255,0.3);
+  transform: rotateX(65deg) rotateY(15deg);
+  animation: gyroOuterSpin 3.2s linear infinite;
 }
-.pending-link-ring::after { content: ""; position: absolute; inset: -5px; border-radius: inherit; border-top: 1px solid rgba(255,255,255,.75); transform: translateZ(2px); }
-.pending-link-ring.ring-one { left: 0; transform: rotateZ(-28deg) rotateY(35deg); }
-.pending-link-ring.ring-two { right: 0; transform: rotateZ(-28deg) rotateY(35deg); }
-.pending-link-model > i { width: 19px; height: 5px; position: absolute; left: 25px; top: 18px; border-radius: 5px; background: linear-gradient(90deg,#787776,#f3f0ef,#5f5e5e); box-shadow: 0 0 9px rgba(255,255,255,.24); transform: rotateZ(-28deg) translateZ(5px); }
+.gyro-inner {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  background: linear-gradient(225deg, rgba(255,255,255,0.95), rgba(70,70,70,0.4), rgba(220,220,220,0.9)) border-box;
+  box-shadow: 0 0 9px rgba(255,255,255,0.25);
+  transform: rotateX(65deg) rotateY(-45deg);
+  animation: gyroInnerSpin 2.1s linear infinite reverse;
+}
+.gyro-core {
+  position: absolute;
+  inset: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #a0a0a0 45%, #252525 85%, #101010 100%);
+  box-shadow: 0 0 16px rgba(255,255,255,0.6), inset 0 2px 4px rgba(255,255,255,0.85);
+  animation: gyroCorePulse 1.8s ease-in-out infinite alternate;
+}
+.gyro-pulse {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.45);
+  animation: gyroPulseExpand 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
 .pending-link-copy { min-width: 0; display: grid; gap: 3px; }
 .pending-link-copy small { color: #929090; font-family: ui-monospace,"SFMono-Regular",Menlo,monospace; font-size: 7px; font-weight: 750; letter-spacing: .11em; }
 .pending-link-copy strong { overflow: hidden; color: var(--stitch-white); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .pending-link-copy > span { height: 3px; margin-top: 3px; overflow: hidden; border-radius: 4px; background: #292a2a; }
 .pending-link-copy > span i { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg,#5f5e5e,#f3f0ef); box-shadow: 0 0 10px rgba(255,255,255,.24); transition: width .5s ease; }
 .pending-link-effect > b { min-width: 31px; color: #c9c6c5; font-family: ui-monospace,"SFMono-Regular",Menlo,monospace; font-size: 8px; text-align: right; font-variant-numeric: tabular-nums; }
-.pending-link-effect.is-queued .pending-link-model { animation: pendingLinkWait 1.3s ease-in-out infinite; }
-.pending-link-effect.is-processing .pending-link-model { animation-duration: 2.4s; }
+.pending-link-effect.is-queued .pending-link-model { animation-duration: 10s; }
+.pending-link-effect.is-processing .pending-link-model { animation-duration: 4s; }
 .ios-page .pending-link-effect { width: min(360px,calc(100% - 24px)); right: auto; left: 50%; bottom: calc(148px + env(safe-area-inset-bottom)); transform: translateX(-50%); animation-name: pendingHudInMobile; }
 
-@keyframes pendingLinkSpin { from { transform: rotateX(12deg) rotateY(0deg); } to { transform: rotateX(12deg) rotateY(360deg); } }
-@keyframes pendingLinkWait { 0%,100% { transform: rotateX(12deg) rotateY(-18deg) translateY(1px); } 50% { transform: rotateX(18deg) rotateY(18deg) translateY(-3px); } }
+@keyframes gyroRotate { from { transform: rotateX(20deg) rotateY(0deg); } to { transform: rotateX(20deg) rotateY(360deg); } }
+@keyframes gyroOuterSpin { from { transform: rotateX(65deg) rotateZ(0deg); } to { transform: rotateX(65deg) rotateZ(360deg); } }
+@keyframes gyroInnerSpin { from { transform: rotateY(65deg) rotateZ(0deg); } to { transform: rotateY(65deg) rotateZ(360deg); } }
+@keyframes gyroCorePulse { 0% { transform: scale(0.88); box-shadow: 0 0 10px rgba(255,255,255,0.3); } 100% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.7), 0 0 8px rgba(255,255,255,0.9); } }
+@keyframes gyroPulseExpand { 0% { transform: scale(0.6); opacity: 0.8; } 100% { transform: scale(1.4); opacity: 0; } }
 @keyframes pendingHudIn { from { opacity: 0; transform: translateY(16px) scale(.95); } to { opacity: 1; transform: none; } }
 @keyframes pendingHudInMobile { from { opacity: 0; transform: translate(-50%,14px) scale(.96); } to { opacity: 1; transform: translateX(-50%); } }
 

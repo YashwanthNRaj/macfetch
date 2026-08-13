@@ -25,7 +25,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PendingLinkEffect from "./PendingLinkEffect";
 
-const API = "http://127.0.0.1:8432/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8432/api";
 const TYPEWRITER_TEXT = "Seedha tere Mac pe.";
 const qualities = [
   { label: "144p", value: 144 },
@@ -307,6 +307,23 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Download start nahi ho paaya.");
       setJobs((current) => [data, ...current.filter((item) => item.id !== data.id)]);
+
+      fetch(`${API}/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, mode, quality, cookies: cookieMode }),
+      })
+        .then((r) => r.json())
+        .then((streamData) => {
+          if (streamData.downloadUrl) {
+            const a = document.createElement("a");
+            a.href = streamData.downloadUrl;
+            a.target = "_blank";
+            a.rel = "noreferrer";
+            a.click();
+          }
+        })
+        .catch(() => undefined);
     } catch (error) {
       if (error instanceof TypeError) {
         setServiceReady(false);

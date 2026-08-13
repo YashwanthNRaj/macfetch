@@ -131,7 +131,11 @@ export default function StealthShader() {
       }
     };
 
-    const resizeObserver = new ResizeObserver(syncSize);
+    let resizeFrame: number;
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(syncSize);
+    });
     resizeObserver.observe(canvas);
     window.addEventListener("pointermove", movePointer, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);

@@ -136,11 +136,12 @@ def run_download(job_id: str, payload: dict) -> None:
     command = [
         yt_dlp,
         "--newline",
+        "--progress",
         "--no-playlist",
         "--no-overwrites",
         "--windows-filenames",
         "--progress-template",
-        "download:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s",
+        "download:download:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s",
         "--progress-template",
         "postprocess:PROCESSING",
         "--print",
@@ -177,6 +178,7 @@ def run_download(job_id: str, payload: dict) -> None:
                 continue
             last_lines.append(line)
             last_lines = last_lines[-10:]
+            print(f"RAW: {repr(raw_line)}", flush=True)
             if line.startswith("download:"):
                 parts = line.removeprefix("download:").split("|")
                 match = re.search(r"([0-9.]+)%", parts[0])
@@ -215,8 +217,9 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     def cors(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "http://localhost:3000")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        origin = self.headers.get("Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", origin if origin else "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 
     def send_json(self, status: int, payload: dict) -> None:
@@ -279,6 +282,24 @@ class Handler(BaseHTTPRequestHandler):
         global OUTPUT_DIR
         try:
             payload = self.read_json()
+            if self.path == "/api/stream":
+                url = validate_url(str(payload.get("url", "")))
+                mode = payload.get("mode", "video")
+                quality = int(payload.get("quality", 1080))
+                yt_dlp = tool("yt-dlp")
+                if not yt_dlp:
+                    self.send_json(503, {"error": "yt-dlp missing on server."})
+                    return
+                format_spec = f"best[height<={quality}]/best" if mode == "video" else "bestaudio/best"
+                cmd = [yt_dlp, "-g", "-f", format_spec, *cookie_args(payload.get("cookies", "firefox")), url]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                if result.returncode == 0 and result.stdout.strip():
+                    stream_urls = result.stdout.strip().splitlines()
+                    self.send_json(200, {"downloadUrl": stream_urls[0], "streamUrls": stream_urls})
+                    return
+                self.send_json(422, {"error": "Could not extract direct download stream link."})
+                return
+
             if self.path == "/api/inspect":
                 url = validate_url(str(payload.get("url", "")))
                 yt_dlp = tool("yt-dlp")
