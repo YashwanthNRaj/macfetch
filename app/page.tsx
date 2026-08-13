@@ -667,7 +667,7 @@ export default function Home() {
         <p>Legal rehna: sirf wahi content save karo jo tumhara hai ya jiska permission hai.</p>
         <Link className="footer-platform-link" href="/ios"><Smartphone size={13} /> iPhone version</Link>
       </footer>
-      {primaryJob && <PendingLinkEffect status={primaryJob.status} progress={primaryJob.progress} />}
+      {primaryJob && <PendingLinkEffect status={primaryJob.status as "queued" | "downloading" | "processing"} progress={primaryJob.progress} />}
       </div>
     </main>
   );

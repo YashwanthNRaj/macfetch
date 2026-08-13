@@ -57,6 +57,7 @@ export default function StealthShader() {
     if (!gl) return;
 
     function compile(type: number, source: string) {
+      if (!gl) return null;
       const shader = gl.createShader(type);
       if (!shader) return null;
       gl.shaderSource(shader, source);

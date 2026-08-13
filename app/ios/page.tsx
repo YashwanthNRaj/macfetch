@@ -395,7 +395,7 @@ export default function IOSCompanion() {
           {primaryJob && <i style={{ width: `${Math.max(primaryJob.progress, 2)}%` }} />}
         </button>
       </div>
-      {primaryJob && <PendingLinkEffect status={primaryJob.status} progress={primaryJob.progress} />}
+      {primaryJob && <PendingLinkEffect status={primaryJob.status as "queued" | "downloading" | "processing"} progress={primaryJob.progress} />}
       <nav className="ios-bottom-nav" aria-label="iPhone app sections">
         <a className="active" href="#ios-downloader"><Download size={18} /><span>Downloader</span></a>
         <a href="#ios-format"><Film size={18} /><span>Format</span></a>
