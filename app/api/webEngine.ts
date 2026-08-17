@@ -58,25 +58,42 @@ export async function inspectYouTubeUrl(rawUrl: string) {
   let duration = 0;
 
   try {
-    const basicInfo = await ytdl.getBasicInfo(rawUrl);
-    if (basicInfo.videoDetails) {
-      title = basicInfo.videoDetails.title || title;
-      channel = basicInfo.videoDetails.author?.name || channel;
-      thumbnail = basicInfo.videoDetails.thumbnails?.at(-1)?.url || thumbnail;
-      duration = parseInt(basicInfo.videoDetails.lengthSeconds || "0", 10);
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
+    const res = await fetch(oembedUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      title = data.title || title;
+      channel = data.author_name || channel;
+      if (data.thumbnail_url) thumbnail = data.thumbnail_url;
     }
   } catch {
-    // Fallback to noembed API
+    // Continue to ytdl / noembed
+  }
+
+  if (!title || title.startsWith("YouTube Video")) {
     try {
-      const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        title = data.title || title;
-        channel = data.author_name || channel;
-        if (data.thumbnail_url) thumbnail = data.thumbnail_url;
+      const basicInfo = await ytdl.getBasicInfo(rawUrl);
+      if (basicInfo.videoDetails) {
+        title = basicInfo.videoDetails.title || title;
+        channel = basicInfo.videoDetails.author?.name || channel;
+        thumbnail = basicInfo.videoDetails.thumbnails?.at(-1)?.url || thumbnail;
+        duration = parseInt(basicInfo.videoDetails.lengthSeconds || "0", 10);
       }
     } catch {
-      // Ignore
+      try {
+        const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          title = data.title || title;
+          channel = data.author_name || channel;
+          if (data.thumbnail_url) thumbnail = data.thumbnail_url;
+        }
+      } catch {
+        // Ignore
+      }
     }
   }
 
