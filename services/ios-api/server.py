@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
-HOST = os.environ.get("HOST", "127.0.0.1")
+HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "9432"))
 SERVICE_TOKEN = os.environ.get("MACFETCH_SERVICE_TOKEN", "macfetch-dev-only")
 WORK_ROOT = Path(os.environ.get("MACFETCH_WORK_ROOT", "/tmp/macfetch-ios"))

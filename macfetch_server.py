@@ -16,8 +16,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-HOST = "127.0.0.1"
-PORT = 8432
+HOST = os.environ.get("HOST", "0.0.0.0")
+PORT = int(os.environ.get("PORT", "8432"))
 DEFAULT_OUTPUT_DIR = Path.home() / "Downloads" / "MacFetch"
 CONFIG_FILE = Path.home() / "Library" / "Application Support" / "MacFetch" / "config.json"
 ALLOWED_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "youtube-nocookie.com", "www.youtube-nocookie.com"}
