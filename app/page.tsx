@@ -197,6 +197,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("macfetch_jobs");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setJobs(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
     if (!serviceReady) return;
     let active = true;
     const refreshJobs = async () => {
@@ -204,14 +218,22 @@ export default function Home() {
         const res = await fetch(`${API}/jobs`, { cache: "no-store" });
         if (!res.ok || !active) return;
         const data = await res.json();
-        const nextJobs = Array.isArray(data.jobs) ? data.jobs : [];
-        setJobs(nextJobs);
+        if (Array.isArray(data.jobs) && data.jobs.length > 0) {
+          setJobs((current) => {
+            const map = new Map<string, Job>();
+            current.forEach((j) => map.set(j.id, j));
+            data.jobs.forEach((j: Job) => map.set(j.id, j));
+            const merged = Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            try { localStorage.setItem("macfetch_jobs", JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
       } catch {
         // A later poll can recover if the local service briefly restarts.
       }
     };
     refreshJobs();
-    const timer = window.setInterval(refreshJobs, 700);
+    const timer = window.setInterval(refreshJobs, 1500);
     return () => {
       active = false;
       window.clearInterval(timer);
@@ -306,24 +328,19 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Download start nahi ho paaya.");
-      setJobs((current) => [data, ...current.filter((item) => item.id !== data.id)]);
+      setJobs((current) => {
+        const updated = [data, ...current.filter((item) => item.id !== data.id)];
+        try { localStorage.setItem("macfetch_jobs", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
 
-      fetch(`${API}/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, mode, quality, cookies: cookieMode }),
-      })
-        .then((r) => r.json())
-        .then((streamData) => {
-          if (streamData.downloadUrl) {
-            const a = document.createElement("a");
-            a.href = streamData.downloadUrl;
-            a.target = "_blank";
-            a.rel = "noreferrer";
-            a.click();
-          }
-        })
-        .catch(() => undefined);
+      if (data.status === "done" && data.downloadUrl) {
+        const a = document.createElement("a");
+        a.href = data.downloadUrl;
+        a.target = "_blank";
+        a.rel = "noreferrer";
+        a.click();
+      }
     } catch (error) {
       if (error instanceof TypeError) {
         setServiceReady(false);
@@ -343,7 +360,11 @@ export default function Home() {
       const res = await fetch(`${API}/jobs/${job.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Queue item delete nahi hua.");
-      setJobs((current) => current.filter((item) => item.id !== job.id));
+      setJobs((current) => {
+        const updated = current.filter((item) => item.id !== job.id);
+        try { localStorage.setItem("macfetch_jobs", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Queue item delete nahi hua.");
     }

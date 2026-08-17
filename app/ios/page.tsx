@@ -144,6 +144,20 @@ export default function IOSCompanion() {
   }, []);
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("macfetch_ios_jobs");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setJobs(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
     if (!ready) return;
     let active = true;
     const refreshJobs = async () => {
@@ -151,13 +165,22 @@ export default function IOSCompanion() {
         const response = await cloudFetch("/jobs");
         if (!response.ok || !active) return;
         const data = await response.json();
-        setJobs(Array.isArray(data.jobs) ? data.jobs : []);
+        if (Array.isArray(data.jobs) && data.jobs.length > 0) {
+          setJobs((current) => {
+            const map = new Map<string, Job>();
+            current.forEach((j) => map.set(j.id, j));
+            data.jobs.forEach((j: Job) => map.set(j.id, j));
+            const merged = Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            try { localStorage.setItem("macfetch_ios_jobs", JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
       } catch {
         // The next poll can recover if the network briefly drops.
       }
     };
     refreshJobs();
-    const timer = window.setInterval(refreshJobs, 800);
+    const timer = window.setInterval(refreshJobs, 1500);
     return () => {
       active = false;
       window.clearInterval(timer);
@@ -226,7 +249,11 @@ export default function IOSCompanion() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Download start nahi ho paaya.");
-      setJobs((current) => [data, ...current.filter((item) => item.id !== data.id)]);
+      setJobs((current) => {
+        const updated = [data, ...current.filter((item) => item.id !== data.id)];
+        try { localStorage.setItem("macfetch_ios_jobs", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
       if (data.status === "done" && data.downloadUrl) {
         window.open(data.downloadUrl, "_blank");
       }
@@ -240,7 +267,11 @@ export default function IOSCompanion() {
       const response = await cloudFetch(`/jobs/${job.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Queue item delete nahi hua.");
-      setJobs((current) => current.filter((item) => item.id !== job.id));
+      setJobs((current) => {
+        const updated = current.filter((item) => item.id !== job.id);
+        try { localStorage.setItem("macfetch_ios_jobs", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Queue item delete nahi hua.");
     }
