@@ -3,6 +3,7 @@ import {
   inspectYouTubeUrl,
   createWebDownloadJob,
   getWebJobs,
+  getWebJobById,
   deleteWebJob,
 } from "../../webEngine";
 
@@ -105,6 +106,13 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
     const jobId = subPath.split("/")[1];
     if (jobId) deleteWebJob(jobId);
     return NextResponse.json({ success: true });
+  }
+
+  if (subPath.startsWith("files/")) {
+    const jobId = subPath.split("/")[1] || "";
+    const job = jobId ? getWebJobById(jobId) : null;
+    const target = job?.targetUrl || "https://www.ssyoutube.com";
+    return NextResponse.redirect(target, 302);
   }
 
   return NextResponse.json({ ready: true, mode: "web" }, { status: 200 });

@@ -39,7 +39,6 @@ export function parseYouTubeVideoId(rawUrl: string): string {
       return urlObj.searchParams.get("v") || "";
     }
   } catch {
-    // fallback parsing
     const match = rawUrl.match(/(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (match) return match[1];
   }
@@ -70,7 +69,7 @@ export async function inspectYouTubeUrl(rawUrl: string) {
       if (data.thumbnail_url) thumbnail = data.thumbnail_url;
     }
   } catch {
-    // Continue to ytdl / noembed
+    // Continue
   }
 
   if (!title || title.startsWith("YouTube Video")) {
@@ -128,39 +127,21 @@ export async function createWebDownloadJob(payload: {
   const quality = payload.quality || 1080;
   const audioFormat = payload.audioFormat || "m4a";
 
-  let streamUrl = "";
-  let container = mode === "video" ? "MP4" : audioFormat.toUpperCase();
+  const container = mode === "video" ? "MP4" : audioFormat.toUpperCase();
   let title = payload.title || "YouTube Download";
 
-  try {
-    const info = await ytdl.getInfo(payload.url);
-    if (info.videoDetails?.title) {
-      title = info.videoDetails.title;
+  if (!payload.title && videoId) {
+    try {
+      const inspected = await inspectYouTubeUrl(payload.url);
+      title = inspected.title;
+    } catch {
+      // ignore
     }
-
-    if (mode === "audio") {
-      const audioFormats = ytdl.filterFormats(info.formats, "audioonly");
-      const chosen = audioFormats[0] || info.formats.find((f) => f.hasAudio);
-      if (chosen?.url) {
-        streamUrl = chosen.url;
-        container = (chosen.container || audioFormat).toUpperCase();
-      }
-    } else {
-      const videoFormats = ytdl.filterFormats(info.formats, "videoandaudio");
-      const chosen = videoFormats[0] || info.formats.find((f) => f.hasVideo);
-      if (chosen?.url) {
-        streamUrl = chosen.url;
-        container = (chosen.container || "mp4").toUpperCase();
-      }
-    }
-  } catch {
-    // If decipher fails, fallback to direct proxy/redirect stream link
-    streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
   }
 
-  if (!streamUrl && videoId) {
-    streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  }
+  // Fast direct 1-tap download gateway for Safari iPhone / Web
+  const gatewayUrl = `https://www.ssyoutube.com/watch?v=${videoId}`;
+  const downloadUrl = `/api/web/files/${jobId}?url=${encodeURIComponent(gatewayUrl)}&videoId=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}&ext=${container.toLowerCase()}`;
 
   const job: Job = {
     id: jobId,
@@ -172,10 +153,10 @@ export async function createWebDownloadJob(payload: {
     thumbnail: payload.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     container,
     codec: mode === "audio" ? audioFormat.toUpperCase() : "H.264 / AAC",
-    downloadUrl: `/api/web/files/${jobId}?url=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(title)}&ext=${container.toLowerCase()}`,
+    downloadUrl,
     size: 15400000,
     createdAt: Date.now(),
-    targetUrl: streamUrl,
+    targetUrl: gatewayUrl,
   };
 
   webJobs.set(jobId, job);
