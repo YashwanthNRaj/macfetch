@@ -356,8 +356,16 @@ export default function IOSCompanion() {
         </section>
 
         <section className="ios-card ios-destination">
-          <div className="ios-card-heading"><span>03</span><div><h2>iPhone mein kahan?</h2><p>Safari download ke baad Files mein milegi</p></div></div>
-          <div><Download size={19} /><span><small>SAVE KA ADDA</small><strong>Files · Downloads</strong></span></div>
+          <div className="ios-card-heading"><span>03</span><div><h2>iPhone mein kahan save hoga?</h2><p>Safari downloads seedha iPhone Files app mein aate hain</p></div></div>
+          <div style={{ display: "grid", gap: "8px", marginTop: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px", background: "var(--stitch-lowest)", borderRadius: "4px" }}>
+              <Download size={19} />
+              <span><small style={{ color: "#87908b", fontSize: "8px", fontWeight: 800, letterSpacing: ".08em" }}>DEFAULT DESTINATION</small><strong style={{ display: "block", fontSize: "11px" }}>Files App → Downloads</strong></span>
+            </div>
+            <p style={{ margin: "2px 4px 0", fontSize: "10px", color: "var(--stitch-muted)", lineHeight: 1.4 }}>
+              💡 <strong>Gallery (Photos) mein chahiye?</strong> Files app mein video kholo → <strong>Share icon</strong> dabao → <strong>&quot;Save Video&quot;</strong> select karo.
+            </p>
+          </div>
         </section>
 
         {jobs.length > 0 && (

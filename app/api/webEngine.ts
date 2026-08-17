@@ -45,6 +45,31 @@ export function parseYouTubeVideoId(rawUrl: string): string {
   return "";
 }
 
+function calculateFileSize(durationSeconds: number, mode: "video" | "audio", quality: number, audioFormat: string): number {
+  const dur = Math.max(durationSeconds || 210, 10);
+  if (mode === "audio") {
+    if (audioFormat === "flac" || audioFormat === "wav") {
+      return Math.round(dur * 120 * 1024); // ~120 KB/s for lossless
+    }
+    return Math.round(dur * 24 * 1024); // ~192kbps audio ~24 KB/s
+  }
+
+  const bitrateMap: Record<number, number> = {
+    144: 15,
+    240: 30,
+    360: 60,
+    480: 120,
+    720: 280,
+    1080: 600,
+    1440: 1300,
+    2160: 2800,
+    4320: 6500,
+  };
+
+  const kbps = bitrateMap[quality] || 600;
+  return Math.round(dur * kbps * 1024);
+}
+
 export async function inspectYouTubeUrl(rawUrl: string) {
   const videoId = parseYouTubeVideoId(rawUrl);
   if (!videoId) {
@@ -55,7 +80,10 @@ export async function inspectYouTubeUrl(rawUrl: string) {
   let channel = "YouTube Channel";
   let thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   let duration = 0;
+  let availableHeights: number[] = [144, 240, 360, 480, 720, 1080];
+  let maxHeight = 1080;
 
+  // 1. Fast Official YouTube oEmbed
   try {
     const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
     const res = await fetch(oembedUrl, {
@@ -72,6 +100,31 @@ export async function inspectYouTubeUrl(rawUrl: string) {
     // Continue
   }
 
+  // 2. Fetch watch page HTML to extract real duration & available resolutions
+  try {
+    const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" },
+      cache: "no-store",
+    });
+    if (watchRes.ok) {
+      const html = await watchRes.text();
+      const durMatch = html.match(/"lengthSeconds":"(\d+)"/);
+      if (durMatch) {
+        duration = parseInt(durMatch[1], 10);
+      }
+
+      const qualityMatches = [...html.matchAll(/"qualityLabel":"(\d+)p/g)].map((m) => parseInt(m[1], 10));
+      const extractedHeights = [...new Set(qualityMatches)].sort((a, b) => a - b);
+      if (extractedHeights.length > 0) {
+        availableHeights = extractedHeights;
+        maxHeight = Math.max(...extractedHeights);
+      }
+    }
+  } catch {
+    // Fallback
+  }
+
+  // 3. Fallback title/details
   if (!title || title.startsWith("YouTube Video")) {
     try {
       const basicInfo = await ytdl.getBasicInfo(rawUrl);
@@ -79,7 +132,7 @@ export async function inspectYouTubeUrl(rawUrl: string) {
         title = basicInfo.videoDetails.title || title;
         channel = basicInfo.videoDetails.author?.name || channel;
         thumbnail = basicInfo.videoDetails.thumbnails?.at(-1)?.url || thumbnail;
-        duration = parseInt(basicInfo.videoDetails.lengthSeconds || "0", 10);
+        if (!duration) duration = parseInt(basicInfo.videoDetails.lengthSeconds || "0", 10);
       }
     } catch {
       try {
@@ -99,9 +152,6 @@ export async function inspectYouTubeUrl(rawUrl: string) {
   if (!title) {
     title = `YouTube Video (${videoId})`;
   }
-
-  const availableHeights = [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320];
-  const maxHeight = 4320;
 
   return {
     title,
@@ -129,15 +179,19 @@ export async function createWebDownloadJob(payload: {
 
   const container = mode === "video" ? "MP4" : audioFormat.toUpperCase();
   let title = payload.title || "YouTube Download";
+  let duration = 210;
 
-  if (!payload.title && videoId) {
+  if (videoId) {
     try {
       const inspected = await inspectYouTubeUrl(payload.url);
-      title = inspected.title;
+      title = inspected.title || title;
+      if (inspected.duration) duration = inspected.duration;
     } catch {
       // ignore
     }
   }
+
+  const realCalculatedSize = calculateFileSize(duration, mode, quality, audioFormat);
 
   // Fast direct 1-tap download gateway for Safari iPhone / Web
   const gatewayUrl = `https://www.ssyoutube.com/watch?v=${videoId}`;
@@ -154,7 +208,7 @@ export async function createWebDownloadJob(payload: {
     container,
     codec: mode === "audio" ? audioFormat.toUpperCase() : "H.264 / AAC",
     downloadUrl,
-    size: 15400000,
+    size: realCalculatedSize,
     createdAt: Date.now(),
     targetUrl: gatewayUrl,
   };
