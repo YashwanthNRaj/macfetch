@@ -25,7 +25,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import PendingLinkEffect from "./PendingLinkEffect";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8432/api";
+const API = "/api/mac";
 const TYPEWRITER_TEXT = "Seedha tere Mac pe.";
 const qualities = [
   { label: "144p", value: 144 },
@@ -464,7 +464,7 @@ export default function Home() {
             <span className="active" aria-current="page"><MonitorDown size={14} /> <b>Mac</b></span>
             <Link href="/ios"><Smartphone size={14} /> <b>iPhone</b></Link>
           </div>
-          <span className="service-pill"><span className={`status-dot ${serviceReady ? "online" : ""}`} /><span className="local-label">{serviceReady === null ? "Mac check ho raha…" : serviceReady ? "Mac full ready" : "Mac offline hai"}</span></span>
+          <span className="service-pill"><span className={`status-dot ${serviceReady ? "online" : ""}`} /><span className="local-label">{serviceReady === null ? "Engine check ho raha…" : serviceReady ? "Engine full ready" : "Offline"}</span></span>
         </div>
       </nav>
 
@@ -509,22 +509,14 @@ export default function Home() {
               aria-label="YouTube URL"
             />
             <button className="paste-button" onClick={pasteUrl}><Clipboard size={17} /> <span>Chipka de</span></button>
-            <button className="analyze-button" onClick={analyze} disabled={loading} title={serviceReady === false ? "MacFetch start.command chalao ya iPhone mode switch karo" : undefined}>
+            <button className="analyze-button" onClick={analyze} disabled={loading}>
               {loading ? <LoaderCircle className="spin" size={18} /> : <Sparkles size={17} />}
-              {loading ? "Dekh raha…" : serviceReady === false ? "MacFetch start karo" : "Check kar"}
+              {loading ? "Dekh raha…" : "Check kar"}
             </button>
           </div>
           <div className="privacy-line"><LockKeyhole size={13} /> Sab local. Cloud ka koi scene nahi. <span /> Browsing data Mac pe hi rahega</div>
         </div>
         {message && <div className="notice" role="status" aria-live="polite"><CircleAlert size={17} /> {message}</div>}
-        {serviceReady === false && (
-          <div className="notice mac-offline-banner" role="status" aria-live="polite">
-            <CircleAlert size={17} />
-            <span>
-              <strong>Mac backend offline hai.</strong> Mac local downloads ke liye terminal mein <code>python3 macfetch_server.py</code> chalao ya <code>start.command</code> run karo. Direct cloud / browser downloads ke liye top nav se <Link href="/ios" style={{ textDecoration: "underline", color: "#fff", fontWeight: 700 }}>iPhone mode</Link> try karo.
-            </span>
-          </div>
-        )}
       </section>
 
       <section className={`workspace shell ${info ? "has-info" : ""}`} id="workflow">

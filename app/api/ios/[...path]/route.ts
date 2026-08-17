@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  inspectYouTubeUrl,
+  createWebDownloadJob,
+  getWebJobs,
+  deleteWebJob,
+} from "../../webEngine";
 
 export const dynamic = "force-dynamic";
 
@@ -9,72 +15,91 @@ function getApiConfig() {
   return { origin, token };
 }
 
-async function handleProxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+async function handleProxyOrFallback(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   const subPath = path ? path.join("/") : "";
   const { origin, token } = getApiConfig();
 
-  if (!origin) {
-    if (subPath === "health") {
-      return NextResponse.json(
-        { ready: false, error: "iPhone download engine deploy nahi hua. Vercel / host par IOS_API_ORIGIN aur IOS_SERVICE_TOKEN configure karo." },
-        { status: 200 }
-      );
+  // If a remote backend origin is configured, attempt proxying to it
+  if (origin) {
+    const targetUrl = new URL(`/${subPath}${req.nextUrl.search}`, origin);
+    const headers = new Headers(req.headers);
+    headers.delete("host");
+    headers.delete("cookie");
+    if (token) headers.set("X-MacFetch-Service-Token", token);
+
+    try {
+      const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
+      const res = await fetch(targetUrl.toString(), {
+        method: req.method,
+        headers,
+        body,
+        cache: "no-store",
+      });
+      if (res.ok || subPath !== "health") {
+        const responseHeaders = new Headers(res.headers);
+        responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate");
+        return new Response(res.body, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: responseHeaders,
+        });
+      }
+    } catch {
+      // If remote proxy fails, fall through to Web Direct Engine!
     }
-    return NextResponse.json(
-      { error: "iPhone download backend offline hai. IOS_API_ORIGIN configured nahi hai." },
-      { status: 503 }
-    );
   }
 
-  const targetUrl = new URL(`/${subPath}${req.nextUrl.search}`, origin);
-
-  const headers = new Headers(req.headers);
-  headers.delete("host");
-  headers.delete("cookie");
-  if (token) {
-    headers.set("X-MacFetch-Service-Token", token);
+  // --- Web Direct Fallback Engine (Runs when backend is offline) ---
+  if (subPath === "health") {
+    return NextResponse.json({ ready: true, mode: "web", engine: "web-direct" }, { status: 200 });
   }
-  headers.set("X-MacFetch-Client-IP", req.headers.get("x-forwarded-for") || "client");
 
-  try {
-    const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
-    const res = await fetch(targetUrl.toString(), {
-      method: req.method,
-      headers,
-      body,
-      cache: "no-store",
-    });
-
-    const responseHeaders = new Headers(res.headers);
-    responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate");
-
-    return new Response(res.body, {
-      status: res.status,
-      statusText: res.statusText,
-      headers: responseHeaders,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Backend connection error";
-    if (subPath === "health") {
-      return NextResponse.json({ ready: false, error: `Backend service reach nahi ho pa rahi (${message}).` }, { status: 200 });
+  if (subPath === "inspect" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      const data = await inspectYouTubeUrl(body.url || "");
+      return NextResponse.json(data);
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "Video check nahi ho paaya." }, { status: 400 });
     }
-    return NextResponse.json({ error: `Backend service error: ${message}` }, { status: 502 });
   }
+
+  if (subPath === "download" && req.method === "POST") {
+    try {
+      const body = await req.json();
+      const job = await createWebDownloadJob(body);
+      return NextResponse.json(job);
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "Download start nahi ho paaya." }, { status: 400 });
+    }
+  }
+
+  if (subPath === "jobs" && req.method === "GET") {
+    return NextResponse.json({ jobs: getWebJobs() });
+  }
+
+  if (subPath.startsWith("jobs/") && req.method === "DELETE") {
+    const jobId = subPath.split("/")[1];
+    if (jobId) deleteWebJob(jobId);
+    return NextResponse.json({ success: true });
+  }
+
+  return NextResponse.json({ ready: true, mode: "web" }, { status: 200 });
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return handleProxy(req, ctx);
+  return handleProxyOrFallback(req, ctx);
 }
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return handleProxy(req, ctx);
+  return handleProxyOrFallback(req, ctx);
 }
 
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return handleProxy(req, ctx);
+  return handleProxyOrFallback(req, ctx);
 }
 
 export async function HEAD(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  return handleProxy(req, ctx);
+  return handleProxyOrFallback(req, ctx);
 }
