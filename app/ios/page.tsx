@@ -127,9 +127,12 @@ export default function IOSCompanion() {
         const data = await response.json();
         if (!active) return;
         setReady(response.ok && Boolean(data.ready));
-        if (!response.ok) setMessage(data.error || "Download service offline hai.");
+        if (!data.ready || !response.ok) setMessage(data.error || "Download service offline hai.");
       } catch {
-        if (active) setReady(false);
+        if (active) {
+          setReady(false);
+          setMessage("Download service offline hai.");
+        }
       }
     };
     check();
