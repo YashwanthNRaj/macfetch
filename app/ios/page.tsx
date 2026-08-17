@@ -343,6 +343,10 @@ export default function IOSCompanion() {
               {["m4a", "mp3", "flac", "wav"].map((format) => <button key={format} className={audioFormat === format ? "selected" : ""} onClick={() => setAudioFormat(format)}><Music2 size={17} /><strong>{format.toUpperCase()}</strong><small>{format === "m4a" ? "Best pick" : format === "mp3" ? "Har jagah" : format === "flac" ? "Lossless" : "Raw"}</small></button>)}
             </div>
           )}
+          <button className={`ios-card-action-btn ${activeJobs.length ? "queue-active" : ""}`} onClick={handlePrimaryAction} disabled={loading || !ready}>
+            <span>{activeJobs.length ? <LoaderCircle className="spin" size={18} /> : <Download size={18} />}</span>
+            <strong>{actionLabel}</strong>
+          </button>
         </section>
 
         <section className="ios-card ios-destination">

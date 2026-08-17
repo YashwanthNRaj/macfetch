@@ -538,9 +538,9 @@ footer span { display: flex; align-items: center; gap: 6px; font-weight: 800; }
 .ios-content { display: grid; gap: 13px; }
 .ios-hero { padding: 48px 4px 20px; }
 .ios-kicker { display: inline-flex; align-items: center; gap: 6px; color: #45644c; font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
-.ios-hero h1 { margin: 14px 0 12px; max-width: 470px; font-size: clamp(38px, 11vw, 58px); line-height: .98; letter-spacing: -.06em; font-weight: 780; }
+.ios-hero h1 { margin: 14px 0 12px; max-width: 470px; font-size: clamp(38px, 11vw, 58px); line-height: 1.12; letter-spacing: -.05em; font-weight: 780; }
 .ios-hero h1 em { color: #f1eee7; font-style: normal; }
-.ios-typewriter-line { min-height: 1em; position: relative; }
+.ios-typewriter-line { min-height: 1.15em; position: relative; display: inline-block; padding-top: 2px; }
 .ios-typewriter-line.is-typing::after { content: ""; width: 2px; height: .78em; margin-left: 5px; display: inline-block; border-radius: 2px; background: currentColor; vertical-align: -.03em; animation: typewriterCaret .72s step-end infinite; }
 .ios-typewriter-line.is-typing.complete::after { animation: typewriterCaretFade .42s .9s ease forwards; }
 .ios-hero p { margin: 0; max-width: 440px; color: #72807b; font-size: 13px; line-height: 1.55; }
@@ -1123,7 +1123,7 @@ main > .ambient-effects { display: none; }
 .desktop-app-main footer { border-color: var(--stitch-outline); }
 
 /* Stitch mobile shell */
-.ios-page { background: rgba(10,10,10,.22); padding-bottom: calc(158px + env(safe-area-inset-bottom)); }
+.ios-page { background: rgba(10,10,10,.22); padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
 .ios-page::before { opacity: .35; background: radial-gradient(circle at 90% 8%, rgba(120,119,118,.16), transparent 26%), linear-gradient(160deg, #1a1c1c 0%, #0a0a0a 54%, transparent 100%); }
 .ios-shell { width: min(600px, calc(100% - 32px)); }
 .ios-nav {
@@ -1142,8 +1142,8 @@ main > .ambient-effects { display: none; }
 .ios-brand strong { letter-spacing: -.04em; }
 .ios-brand small,
 .ios-connection { border-radius: 2px; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
-.ios-hero { padding: 34px 2px 14px; }
-.ios-hero h1 { margin: 10px 0 9px; font-size: clamp(34px,9vw,48px); line-height: .96; }
+.ios-hero { padding: 24px 2px 14px; }
+.ios-hero h1 { margin: 10px 0 9px; font-size: clamp(32px,8.5vw,46px); line-height: 1.12; letter-spacing: -.04em; }
 .ios-hero p { max-width: 520px; color: var(--stitch-muted); font-size: 12px; }
 .ios-kicker { color: #adabaa; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 9px; }
 .ios-card { padding: 15px; border-color: rgba(229,226,225,.14); border-radius: 7px; background: linear-gradient(145deg, rgba(40,43,43,.64), rgba(13,15,15,.52)); box-shadow: 0 16px 38px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.075), inset 0 0 0 1px rgba(255,255,255,.015); backdrop-filter: blur(20px) saturate(1.12); -webkit-backdrop-filter: blur(20px) saturate(1.12); }
@@ -1167,11 +1167,15 @@ main > .ambient-effects { display: none; }
 .ios-audio-grid button { min-height: 66px; border-color: var(--stitch-outline); border-radius: 3px; background: var(--stitch-lowest); }
 .ios-quality-grid button.selected,
 .ios-audio-grid button.selected { border-color: #787776; background: var(--stitch-high); box-shadow: inset 0 -2px 0 #929090; }
+.ios-card-action-btn { width: 100%; min-height: 48px; margin-top: 14px; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #5f5e5e; border-radius: 4px; color: #1c1b1b; background: var(--stitch-ivory); font-size: 13px; font-weight: 800; cursor: pointer; transition: background .2s ease, transform .15s ease; }
+.ios-card-action-btn:hover { background: #ffffff; }
+.ios-card-action-btn:active { transform: scale(.98); }
+.ios-card-action-btn:disabled { opacity: .5; pointer-events: none; }
 .ios-destination > div:last-child { border-radius: 3px; background: var(--stitch-lowest); }
 .ios-queue-item { border-color: var(--stitch-outline); }
 .ios-queue-animation,
 .ios-queue-state button { border-radius: 2px; background: var(--stitch-high); }
-.ios-download-dock { bottom: calc(77px + env(safe-area-inset-bottom)); z-index: 65; }
+.ios-download-dock { bottom: calc(68px + env(safe-area-inset-bottom)); z-index: 65; }
 .ios-download-dock > button { min-height: 58px; border-color: #5f5e5e; border-radius: 4px; background: var(--stitch-highest); box-shadow: 0 16px 34px rgba(0,0,0,.52), inset 0 -2px 0 #929090; backdrop-filter: blur(18px); }
 .ios-download-dock > button.queue-active { box-shadow: 0 16px 34px rgba(0,0,0,.52), inset 0 -2px 0 #929090; }
 .ios-bottom-nav {
