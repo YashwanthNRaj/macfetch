@@ -707,6 +707,8 @@ main::before {
 .paste-button:hover { background: rgba(255,255,255,.08); }
 .analyze-button { border-color: rgba(255,255,255,.1); color: white; background: linear-gradient(180deg, #777d7b, #2f3334); box-shadow: 0 10px 25px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.18); }
 .notice, .ios-message { border-color: rgba(114,120,118,.32); color: #c2c5c2; background: rgba(28,31,32,.74); box-shadow: var(--shadow-sm); }
+.mac-offline-banner { display: flex; align-items: center; gap: 10px; border-color: rgba(230,170,80,.35); background: rgba(45,35,20,.82); color: #e8d5be; line-height: 1.45; font-size: 12px; }
+.mac-offline-banner code { padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,.1); font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 11px; }
 .workflow-label span { color: #c1c3bf; }
 .workflow-label small { color: #717775; }
 .panel, .video-card, .side-card, .job-card, .queue-panel { border-color: rgba(255,255,255,.075); color: #eeeae2; background: rgba(18,20,21,.86); box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.025); }

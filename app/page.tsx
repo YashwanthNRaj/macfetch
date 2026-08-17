@@ -263,7 +263,7 @@ export default function Home() {
       return;
     }
     if (!serviceReady) {
-      setMessage("");
+      setMessage("Mac backend offline hai. Terminal mein `python3 macfetch_server.py` chalao ya `start.command` run karo. Direct browser downloads ke liye iPhone tab switch karo.");
       return;
     }
     setLoading(true);
@@ -509,7 +509,7 @@ export default function Home() {
               aria-label="YouTube URL"
             />
             <button className="paste-button" onClick={pasteUrl}><Clipboard size={17} /> <span>Chipka de</span></button>
-            <button className="analyze-button" onClick={analyze} disabled={loading || serviceReady === false} title={serviceReady === false ? "MacFetch start.command kholo" : undefined}>
+            <button className="analyze-button" onClick={analyze} disabled={loading} title={serviceReady === false ? "MacFetch start.command chalao ya iPhone mode switch karo" : undefined}>
               {loading ? <LoaderCircle className="spin" size={18} /> : <Sparkles size={17} />}
               {loading ? "Dekh raha…" : serviceReady === false ? "MacFetch start karo" : "Check kar"}
             </button>
@@ -517,6 +517,14 @@ export default function Home() {
           <div className="privacy-line"><LockKeyhole size={13} /> Sab local. Cloud ka koi scene nahi. <span /> Browsing data Mac pe hi rahega</div>
         </div>
         {message && <div className="notice" role="status" aria-live="polite"><CircleAlert size={17} /> {message}</div>}
+        {serviceReady === false && (
+          <div className="notice mac-offline-banner" role="status" aria-live="polite">
+            <CircleAlert size={17} />
+            <span>
+              <strong>Mac backend offline hai.</strong> Mac local downloads ke liye terminal mein <code>python3 macfetch_server.py</code> chalao ya <code>start.command</code> run karo. Direct cloud / browser downloads ke liye top nav se <Link href="/ios" style={{ textDecoration: "underline", color: "#fff", fontWeight: 700 }}>iPhone mode</Link> try karo.
+            </span>
+          </div>
+        )}
       </section>
 
       <section className={`workspace shell ${info ? "has-info" : ""}`} id="workflow">
@@ -620,7 +628,7 @@ export default function Home() {
             </div>
           </section>
 
-          <button className={`download-button ${info ? "is-ready" : ""} ${activeJobs.length ? "queue-active" : "idle"}`} onClick={startDownload} disabled={loading || serviceReady === false} onPointerMove={magnetize} onPointerLeave={resetMagnet}>
+          <button className={`download-button ${info ? "is-ready" : ""} ${activeJobs.length ? "queue-active" : "idle"}`} onClick={startDownload} disabled={loading} onPointerMove={magnetize} onPointerLeave={resetMagnet}>
             <span className={`download-icon ${activeJobs.length ? "is-working" : ""}`}><Download size={21} /></span>
             <span className="download-copy"><strong>{activeJobs.length ? `Queue mein daal · ${activeJobs.length} active` : `Le aa ${mode === "video" ? `${qualities.find((q) => q.value === quality)?.label} MP4` : audioFormat.toUpperCase()}`}</strong><small>{info ? `${info.channel} · ${activeJobs.length ? "Apni turn pe khud start hoga" : "Mac pe hi save hoga"}` : "Pehle link check karke formats unlock kar"}</small></span>
             <ArrowRight className="download-arrow" size={19} />
