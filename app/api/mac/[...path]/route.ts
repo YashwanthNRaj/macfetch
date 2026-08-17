@@ -13,6 +13,24 @@ async function handleMacProxyOrFallback(req: NextRequest, { params }: { params: 
   const subPath = path ? path.join("/") : "";
   const localOrigin = "http://127.0.0.1:8432";
 
+  // Read request body safely once
+  let rawBody: string | undefined = undefined;
+  let parsedBody: Record<string, unknown> = {};
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    try {
+      rawBody = await req.text();
+      if (rawBody) {
+        try {
+          parsedBody = JSON.parse(rawBody);
+        } catch {
+          // not JSON
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   // Attempt proxy to local macfetch_server.py if running
   try {
     const targetUrl = new URL(`/api/${subPath}${req.nextUrl.search}`, localOrigin);
@@ -20,13 +38,12 @@ async function handleMacProxyOrFallback(req: NextRequest, { params }: { params: 
     headers.delete("host");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const timeoutId = setTimeout(() => controller.abort(), 800);
 
-    const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
     const res = await fetch(targetUrl.toString(), {
       method: req.method,
       headers,
-      body,
+      body: rawBody,
       cache: "no-store",
       signal: controller.signal,
     });
@@ -42,7 +59,7 @@ async function handleMacProxyOrFallback(req: NextRequest, { params }: { params: 
       });
     }
   } catch {
-    // If local bridge is offline, seamlessly fall back to Web Direct Engine!
+    // If local bridge is offline, fall through to Web Direct Engine!
   }
 
   // --- Web Direct Fallback Engine for Mac ---
@@ -52,8 +69,8 @@ async function handleMacProxyOrFallback(req: NextRequest, { params }: { params: 
 
   if (subPath === "inspect" && req.method === "POST") {
     try {
-      const body = await req.json();
-      const data = await inspectYouTubeUrl(body.url || "");
+      const url = (parsedBody.url as string) || "";
+      const data = await inspectYouTubeUrl(url);
       return NextResponse.json(data);
     } catch (err) {
       return NextResponse.json({ error: err instanceof Error ? err.message : "Video check nahi ho paaya." }, { status: 400 });
@@ -62,8 +79,7 @@ async function handleMacProxyOrFallback(req: NextRequest, { params }: { params: 
 
   if (subPath === "download" || subPath === "stream") {
     try {
-      const body = await req.json();
-      const job = await createWebDownloadJob(body);
+      const job = await createWebDownloadJob(parsedBody as { url: string; mode?: "video" | "audio"; quality?: number; audioFormat?: string; title?: string; thumbnail?: string });
       return NextResponse.json(job);
     } catch (err) {
       return NextResponse.json({ error: err instanceof Error ? err.message : "Download start nahi ho paaya." }, { status: 400 });

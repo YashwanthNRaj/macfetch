@@ -20,6 +20,24 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
   const subPath = path ? path.join("/") : "";
   const { origin, token } = getApiConfig();
 
+  // Read request body safely once
+  let rawBody: string | undefined = undefined;
+  let parsedBody: Record<string, unknown> = {};
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    try {
+      rawBody = await req.text();
+      if (rawBody) {
+        try {
+          parsedBody = JSON.parse(rawBody);
+        } catch {
+          // not JSON
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   // If a remote backend origin is configured, attempt proxying to it
   if (origin) {
     const targetUrl = new URL(`/${subPath}${req.nextUrl.search}`, origin);
@@ -29,13 +47,18 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
     if (token) headers.set("X-MacFetch-Service-Token", token);
 
     try {
-      const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+
       const res = await fetch(targetUrl.toString(), {
         method: req.method,
         headers,
-        body,
+        body: rawBody,
         cache: "no-store",
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+
       if (res.ok || subPath !== "health") {
         const responseHeaders = new Headers(res.headers);
         responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate");
@@ -57,8 +80,8 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
 
   if (subPath === "inspect" && req.method === "POST") {
     try {
-      const body = await req.json();
-      const data = await inspectYouTubeUrl(body.url || "");
+      const url = (parsedBody.url as string) || "";
+      const data = await inspectYouTubeUrl(url);
       return NextResponse.json(data);
     } catch (err) {
       return NextResponse.json({ error: err instanceof Error ? err.message : "Video check nahi ho paaya." }, { status: 400 });
@@ -67,8 +90,7 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
 
   if (subPath === "download" && req.method === "POST") {
     try {
-      const body = await req.json();
-      const job = await createWebDownloadJob(body);
+      const job = await createWebDownloadJob(parsedBody as { url: string; mode?: "video" | "audio"; quality?: number; audioFormat?: string; title?: string; thumbnail?: string });
       return NextResponse.json(job);
     } catch (err) {
       return NextResponse.json({ error: err instanceof Error ? err.message : "Download start nahi ho paaya." }, { status: 400 });
