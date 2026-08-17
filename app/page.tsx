@@ -333,14 +333,6 @@ export default function Home() {
         try { localStorage.setItem("macfetch_jobs", JSON.stringify(updated)); } catch {}
         return updated;
       });
-
-      if (data.status === "done" && data.downloadUrl) {
-        const a = document.createElement("a");
-        a.href = data.downloadUrl;
-        a.target = "_blank";
-        a.rel = "noreferrer";
-        a.click();
-      }
     } catch (error) {
       if (error instanceof TypeError) {
         setServiceReady(false);

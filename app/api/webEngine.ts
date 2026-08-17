@@ -87,7 +87,7 @@ export async function inspectYouTubeUrl(rawUrl: string) {
   try {
     const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
     const res = await fetch(oembedUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" },
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
       cache: "no-store",
     });
     if (res.ok) {
@@ -100,10 +100,10 @@ export async function inspectYouTubeUrl(rawUrl: string) {
     // Continue
   }
 
-  // 2. Fetch watch page HTML to extract real duration & available resolutions
+  // 2. Fetch watch page HTML to extract real duration & all available resolutions (including 2K / 4K / 8K)
   try {
     const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" },
+      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
       cache: "no-store",
     });
     if (watchRes.ok) {
@@ -114,17 +114,22 @@ export async function inspectYouTubeUrl(rawUrl: string) {
       }
 
       const qualityMatches = [...html.matchAll(/"qualityLabel":"(\d+)p/g)].map((m) => parseInt(m[1], 10));
-      const extractedHeights = [...new Set(qualityMatches)].sort((a, b) => a - b);
-      if (extractedHeights.length > 0) {
-        availableHeights = extractedHeights;
-        maxHeight = Math.max(...extractedHeights);
-      }
+      const heightMatches = [...html.matchAll(/"height":(\d+)/g)].map((m) => parseInt(m[1], 10)).filter((h) => [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320].includes(h));
+      const widthMatches = [...html.matchAll(/"width":(\d+)/g)].map((m) => parseInt(m[1], 10));
+
+      const allHeights = [...new Set([...qualityMatches, ...heightMatches])].sort((a, b) => a - b);
+      let maxH = allHeights.length ? Math.max(...allHeights) : 1080;
+      if (widthMatches.some((w) => w >= 3840)) maxH = Math.max(maxH, 2160);
+      if (widthMatches.some((w) => w >= 7680)) maxH = Math.max(maxH, 4320);
+
+      maxHeight = maxH;
+      availableHeights = [144, 240, 360, 480, 720, 1080, 1440, 2160, 4320].filter((h) => h <= maxHeight);
     }
   } catch {
     // Fallback
   }
 
-  // 3. Fallback title/details
+  // 3. Fallback title/details if needed
   if (!title || title.startsWith("YouTube Video")) {
     try {
       const basicInfo = await ytdl.getBasicInfo(rawUrl);
@@ -193,8 +198,8 @@ export async function createWebDownloadJob(payload: {
 
   const realCalculatedSize = calculateFileSize(duration, mode, quality, audioFormat);
 
-  // Fast direct 1-tap download gateway for Safari iPhone / Web
-  const gatewayUrl = `https://www.ssyoutube.com/watch?v=${videoId}`;
+  // Clean download gateway URL for Safari on iPhone / Web
+  const gatewayUrl = `https://yt1s.com/en/watch?v=${videoId}`;
   const downloadUrl = `/api/web/files/${jobId}?url=${encodeURIComponent(gatewayUrl)}&videoId=${encodeURIComponent(videoId)}&title=${encodeURIComponent(title)}&ext=${container.toLowerCase()}`;
 
   const job: Job = {

@@ -254,9 +254,6 @@ export default function IOSCompanion() {
         try { localStorage.setItem("macfetch_ios_jobs", JSON.stringify(updated)); } catch {}
         return updated;
       });
-      if (data.status === "done" && data.downloadUrl) {
-        window.open(data.downloadUrl, "_blank");
-      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Download start nahi ho paaya.");
     }
