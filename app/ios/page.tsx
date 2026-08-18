@@ -420,7 +420,7 @@ export default function IOSCompanion() {
                     {!(["queued", "done", "error"].includes(item.status)) && <div className="ios-queue-progress"><span style={{ width: `${item.progress}%` }} /></div>}
                   </div>
                   <div className="ios-queue-state">
-                    {item.status === "done" ? <button className="ios-save-file" onClick={() => window.open(item.downloadUrl || `/api/web/files/${item.id}`, "_blank")} aria-label="iPhone Files mein locally save karo"><Download size={15} /><span>Save</span></button> : item.status === "error" ? <CircleAlert size={17} /> : item.status === "queued" ? <b>#{item.queuePosition || 1}</b> : <b>{Math.round(item.progress)}%</b>}
+                    {item.status === "done" ? <a className="ios-save-file" href={(item.downloadUrl || `/api/web/files/${item.id}`).replace(/^\/api\/files\//, "/api/ios/files/")} target="_blank" rel="noopener noreferrer" download aria-label="iPhone Files mein locally save karo"><Download size={15} /><span>Save</span></a> : item.status === "error" ? <CircleAlert size={17} /> : item.status === "queued" ? <b>#{item.queuePosition || 1}</b> : <b>{Math.round(item.progress)}%</b>}
                     <button className="ios-queue-delete" onClick={() => deleteJob(item)} aria-label={item.status === "done" ? "Queue entry delete karo" : "Download cancel karke queue se hatao"} title={item.status === "done" ? "Queue se hatao" : "Cancel aur delete"}><Trash2 size={14} /></button>
                   </div>
                 </article>

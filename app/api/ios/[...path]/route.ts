@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 function getApiConfig() {
   const isDev = process.env.NODE_ENV !== "production";
-  const origin = process.env.IOS_API_ORIGIN || process.env.MACFETCH_IOS_API_ORIGIN || (isDev ? "http://127.0.0.1:9432" : "");
+  const origin = process.env.IOS_API_ORIGIN || process.env.MACFETCH_IOS_API_ORIGIN || (isDev ? "http://127.0.0.1:8432" : "");
   const token = process.env.IOS_SERVICE_TOKEN || process.env.MACFETCH_SERVICE_TOKEN || (isDev ? "macfetch-dev-only" : "");
   return { origin, token };
 }
@@ -41,7 +41,7 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
 
   // If a remote backend origin is configured, attempt proxying to it
   if (origin) {
-    const targetUrl = new URL(`/${subPath}${req.nextUrl.search}`, origin);
+    const targetUrl = new URL(`/api/${subPath}${req.nextUrl.search}`, origin);
     const headers = new Headers(req.headers);
     headers.delete("host");
     headers.delete("cookie");
@@ -109,6 +109,25 @@ async function handleProxyOrFallback(req: NextRequest, { params }: { params: Pro
   }
 
   if (subPath.startsWith("files/")) {
+    if (origin) {
+      try {
+        const targetUrl = new URL(`/api/${subPath}${req.nextUrl.search}`, origin);
+        const headers = new Headers(req.headers);
+        headers.delete("host");
+        const res = await fetch(targetUrl.toString(), {
+          method: req.method,
+          headers,
+        });
+        if (res.ok) {
+          return new Response(res.body, {
+            status: res.status,
+            headers: res.headers,
+          });
+        }
+      } catch {
+        // fallback
+      }
+    }
     const jobId = subPath.split("/")[1] || "";
     const job = jobId ? getWebJobById(jobId) : null;
     const target = job?.targetUrl || "https://www.ssyoutube.com";

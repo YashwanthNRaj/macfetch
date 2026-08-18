@@ -201,7 +201,7 @@ def run_download(job_id: str, payload: dict) -> None:
         set_active_process(job_id, None)
         if exit_code == 0:
             final_size = Path(final_file).stat().st_size if final_file and Path(final_file).is_file() else 0
-            update_job(job_id, status="done", progress=100.0, output=str(target_dir), speed="", eta="", size=final_size, downloadedBytes=final_size, totalBytes=final_size)
+            update_job(job_id, status="done", progress=100.0, output=str(target_dir), filePath=final_file, speed="", eta="", size=final_size, downloadedBytes=final_size, totalBytes=final_size)
         else:
             useful = next((line for line in reversed(last_lines) if "ERROR:" in line), last_lines[-1] if last_lines else "yt-dlp stopped unexpectedly.")
             update_job(job_id, status="error", error=useful.removeprefix("ERROR: ")[:320])
@@ -257,6 +257,23 @@ class Handler(BaseHTTPRequestHandler):
             with JOBS_LOCK:
                 job = JOBS.get(job_id)
             self.send_json(200, job) if job else self.send_json(404, {"error": "Download job not found."})
+            return
+        if self.path.startswith("/api/files/"):
+            job_id = self.path.split("?")[0].rsplit("/", 1)[-1]
+            with JOBS_LOCK:
+                job = JOBS.get(job_id)
+            if not job or "filePath" not in job or not Path(job["filePath"]).is_file():
+                self.send_json(404, {"error": "File not found or still downloading."})
+                return
+            file_path = Path(job["filePath"])
+            self.send_response(200)
+            self.cors()
+            self.send_header("Content-Type", "video/mp4" if job.get("mode") == "video" else "audio/mp4")
+            self.send_header("Content-Disposition", f'attachment; filename="{file_path.name}"')
+            self.send_header("Content-Length", str(file_path.stat().st_size))
+            self.end_headers()
+            with open(file_path, "rb") as f:
+                shutil.copyfileobj(f, self.wfile)
             return
         self.send_json(404, {"error": "Not found."})
 
@@ -337,6 +354,7 @@ class Handler(BaseHTTPRequestHandler):
                     "mode": payload.get("mode", "video"),
                     "format": payload.get("audioFormat", "m4a") if payload.get("mode") == "audio" else f"{int(payload.get('quality', 1080))}p",
                     "createdAt": time.time(),
+                    "downloadUrl": f"/api/files/{job_id}",
                 }
                 with JOBS_LOCK:
                     JOBS[job_id] = job
